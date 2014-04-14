@@ -1,0 +1,6 @@
+.DS_Store
+*.log
+*.pyc
+*.swp
+/node_modules/
+/npm-build.log
