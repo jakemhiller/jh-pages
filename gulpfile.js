@@ -1,55 +1,76 @@
+'use strict';
+// generated on 2014-06-21 using generator-gulp-bootstrap 0.0.4
 
-var gulp = require('gulp');
-var sass = require('gulp-sass');
-var coffee = require('gulp-coffee');
-var jade = require('gulp-jade');
-var gutil = require('gulp-util');
-var connect = require('gulp-connect');
+var gulp        = require('gulp');
+var browserSync = require('browser-sync');
+var reload      = browserSync.reload;
+var gutil       = require('gulp-util');
+
+var bourbon    = require('node-bourbon');
+var browserify = require('browserify');
+var source     = require('vinyl-source-stream');
+
+var loc = {
+    srcScripts: './client/scripts/',
+    srcStyles: './client/styles/',
+    destScripts: './scripts/',
+    destStyles: './styles/'
+};
+
+// load plugins
+var $ = require('gulp-load-plugins')();
+
+gulp.task('styles', function () {
+    return gulp.src(loc.srcStyles + 'index.scss')
+        .pipe($.sass({
+            errLogToConsole: true,
+            sourceComments: 'none',
+            sourceMap: 'sass',
+            includePaths: bourbon.includePaths
+        }))
+        .pipe($.autoprefixer('last 1 version'))
+        .pipe(gulp.dest(loc.destStyles))
+        .pipe(reload({stream:true}))
+        .pipe($.size());
+});
+
+gulp.task('scripts:vendor', function() {
+  var b = browserify();
+   b.bundle({debug: true})
+   .on('error', $.util.log)
+   .pipe(source('vendor.js'))
+   .pipe(gulp.dest(loc.destScripts));
+});
 
 gulp.task('scripts', function() {
-    gulp.src(['client/scripts/**/*.coffee'])
-        .pipe(coffee().on('error', function(err){
-            gutil.log(gutil.colors.red(err))
-        }))
-        .pipe(gulp.dest('./scripts'));
+  var b = browserify({
+    entries: [loc.srcScripts + 'index.js'],
+    extensions: ['.js', '.tpl', '.html']
+  }).bundle({debug: true})
+   .on('error', $.util.log)   //error handler for reactify
+   .pipe(source('index.js'))
+   .pipe($.jshint())
+   .pipe($.jshint.reporter(require('jshint-stylish')))
+   .pipe(gulp.dest(loc.destScripts));
 });
 
-gulp.task('styles', function() {
-    gulp.src(['client/styles/**/*.scss'])
-        .pipe(sass().on('error', function(err){
-            gutil.log(gutil.colors.red('Error in SASS syntax'));
-        }))
-        .pipe(gulp.dest('./styles'));
-});
-
-gulp.task('content', function() {
-    gulp.src(['client/views/**/*.jade', '!client/views/layouts/**'])
-        .pipe(jade().on('error', function(err){
-            gutil.log(gutil.colors.red(err))
-        }))
-        .pipe(gulp.dest('./'));
-});
-
-gulp.task('connect', function(){
-    connect.server({
-        livereload: true,
-        port: 9000
+gulp.task('serve', ['styles'], function () {
+    browserSync.init(null, {
+        server: {
+            baseDir: './',
+            directory: true
+        },
+        debugInfo: true,
+        open: false,
+        hostnameSuffix: ".dev"
+    }, function (err, bs) {
+        console.log('Started connect web server on ' + bs.options.url);
     });
 });
 
-gulp.task('default', function() {
-  gulp.run('scripts', 'styles', 'content', 'connect');
-});
-
-gulp.task('watch', function(){
-    gulp.run('default');
-    gulp.watch('client/scripts/**', function(event) {
-        gulp.run('scripts');
-    });
-    gulp.watch('client/styles/**', function(event) {
-        gulp.run('styles');
-    });
-    gulp.watch('client/views/**', function(event) {
-        gulp.run('content');
-    });
+gulp.task('watch', ['serve'], function () {
+    // watch for changes
+    gulp.watch(['**/*.html'], reload);
+    gulp.watch('client/styles/**/*.scss', ['styles']);
+    gulp.watch('client/scripts/**/*.js', ['scripts']);
 });
