@@ -1,6 +1,4 @@
-gulp-proto-base
-
-===============
+## JH-PAGES
 
 Basic starter for Github pages projects/prototypes.
 
