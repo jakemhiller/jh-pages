@@ -5,7 +5,6 @@ var reload      = browserSync.reload;
 
 var bourbon    = require('node-bourbon');
 var browserify = require('browserify');
-var jstify     = require('jstify');
 var source     = require('vinyl-source-stream');
 
 // Load All Gulp Plugins
@@ -18,7 +17,9 @@ gulp.task('scripts', function() {
     entries: ['./app/scripts/index.js'],
     extensions: ['.js', '.tpl'],
     debug: !isProd
-  }).transform(jstify);
+  }).transform('jstify', {
+    engine: 'lodash'
+  });
 
    b.bundle()
    .on('error', $.util.log)
